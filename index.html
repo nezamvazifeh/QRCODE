@@ -19,8 +19,8 @@ input:focus,select:focus{border-color:var(--accent)}
 .out{margin-top:16px;display:flex;justify-content:center;padding:0;border:0;background:none}
 .out img:not([src]){display:none}
 .out img{max-width:100%;height:auto;image-rendering:pixelated}
-a.btn{display:block;margin-top:14px;text-align:center;padding:12px;background:var(--accent);color:#fff;border-radius:10px;text-decoration:none;font-weight:bold}
-a.btn[hidden]{display:none}
+.btn{display:block;width:100%;margin-top:14px;text-align:center;padding:12px;background:var(--accent);color:#fff;border:0;border-radius:10px;font:inherit;font-weight:bold;cursor:pointer}
+.btn[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -40,14 +40,14 @@ a.btn[hidden]{display:none}
   </select>
   <div class="txt" id="preview"></div>
   <div class="out"><img id="img" alt=""></div>
-  <a class="btn" id="dl" download="qr-code.png" hidden>دانلود تصویر (PNG)</a>
+  <button class="btn" id="dl" type="button" hidden>دانلود تصویر (PNG)</button>
 </div>
 <script>
 (function(){
   var $=function(i){return document.getElementById(i)};
   var nameEl=$('name'),codeEl=$('code'),typeEl=$('type'),prev=$('preview'),img=$('img'),dl=$('dl');
   if(qrcode.stringToBytesFuncs&&qrcode.stringToBytesFuncs['UTF-8']){qrcode.stringToBytes=qrcode.stringToBytesFuncs['UTF-8'];}
-  var P='۰۱۲۳۴۵۶۷۸۹';
+  var cur=null,P='۰۱۲۳۴۵۶۷۸۹';
   function toFa(s){return s.replace(/[0-9]/g,function(d){return P[d]}).replace(/[٠-٩]/g,function(d){return P['٠١٢٣٤٥٦٧٨٩'.indexOf(d)]});}
   function render(){
     var name=nameEl.value.trim(),code=toFa(codeEl.value.trim());
@@ -57,17 +57,25 @@ a.btn[hidden]{display:none}
     var qr=qrcode(0,'M');
     qr.addData(text);
     qr.make();
-    var n=qr.getModuleCount(),cell=8,margin=0,size=(n+margin*2)*cell;
+    var n=qr.getModuleCount(),cell=8,margin=1,size=(n+margin*2)*cell;
     var c=document.createElement('canvas');c.width=c.height=size;
     var g=c.getContext('2d');
     g.fillStyle='#fff';g.fillRect(0,0,size,size);
     g.fillStyle='#000';
     for(var r=0;r<n;r++)for(var k=0;k<n;k++)if(qr.isDark(r,k))g.fillRect((k+margin)*cell,(r+margin)*cell,cell,cell);
-    var url=c.toDataURL('image/png');
-    img.src=url;dl.href=url;dl.hidden=false;
+    cur=c;img.src=c.toDataURL('image/png');dl.hidden=false;
   }
   [nameEl,codeEl].forEach(function(e){e.addEventListener('input',render)});
   typeEl.addEventListener('change',render);
+  dl.addEventListener('click',function(){
+    if(!cur)return;
+    cur.toBlob(function(b){
+      var u=URL.createObjectURL(b),a=document.createElement('a');
+      a.href=u;a.download='qr-'+(toFa(codeEl.value.trim())||'code')+'.png';
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(function(){URL.revokeObjectURL(u)},4000);
+    },'image/png');
+  });
   render();
 })();
 </script>
